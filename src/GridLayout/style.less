@@ -1,0 +1,33 @@
+
+.BIDesign {
+  display: flex;
+  flex: 1;
+  gap: 24px;
+  width: 100%;
+  height: 100%;
+  background-color: azure;
+  .designTemplate {
+    width: 300px;
+    border: 1px solid;
+  }
+  .designContainer {
+    position: relative;
+    flex: 1;
+    height: 100%;
+    overflow: auto;
+    border: 1px solid;
+    .designDomCanvas {
+      position: absolute;
+      width: 8069px;
+      height: 100%;
+      border: 2px solid rgb(42, 138, 182);
+      // background-color: rgba(0, 0, 0, 0.5);
+      //   transform: scale(0.5);
+      -webkit-transform-origin: 0 0;
+    }
+  }
+  .designControl {
+    width: 350px;
+    border: 1px solid;
+  }
+}
