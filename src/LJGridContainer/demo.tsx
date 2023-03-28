@@ -1,7 +1,7 @@
-import { LJGridContainer, layoutsMock } from 'lj-react-grid';
+import { LJGridContainer, layoutsMock,LJGridContainerDemo } from 'lj-react-grid';
 import React from 'react';
 
-export const Demo:React.FC =  () => {
+export default () => {
     const layoutsList = []
     for (let index = 0; index < layoutsMock.length; index++) {
         const gridItem = layoutsMock[index];
@@ -24,7 +24,7 @@ export const Demo:React.FC =  () => {
         preventCollision={true}
         isDroppable={false}
         useCSSTransforms={false}
-        // transformScale={1}
+        transformScale={1}
         layout={layoutsList}
     />
 }

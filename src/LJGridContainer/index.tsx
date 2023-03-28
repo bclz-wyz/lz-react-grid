@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import ReactGridLayout, { Layout as ReactGridItemProps }  from 'react-grid-layout';
 
 import layoutsData from './layouts'
@@ -16,19 +16,21 @@ export declare interface BIGridItemData extends ReactGridItemProps {
 export declare interface LJGridContainerProps extends ReactGridLayout.ReactGridLayoutProps {
     eventHandler?: ReactGridLayout.ItemCallback
     development?: boolean
+    // 
 }
 
 
 
 const LJGridContainer: React.FC<LJGridContainerProps> = (props) => {
-    const { development = false, layout=[], children } = props
+    const { development = false, layout=[], children} = props
     console.log('layout',props)
 
     // const  = useMemo(()=>{
     //     return [...layout]
     // },[layout])
 
-    const [layoutList,setLayoutList] = React.useState<ReactGridItemProps[]>(layout)
+    const [layoutList,setLayoutList] = useState<ReactGridItemProps[]>(layout)
+    const [width,setWidth] = useState<number>(props.width||200)
 
     const LJGridLayoutRender = useMemo(()=>{
         return (props:BIGridItemData)=>{
@@ -43,15 +45,16 @@ const LJGridContainer: React.FC<LJGridContainerProps> = (props) => {
     },[setLayoutList,layoutList])
 
     return (
-        <div className={clsx("lj-grid-container", {
+        <ReactGridLayout className={clsx("lj-grid-container", {
             ['lj-grid-containerDev']: development === true,
-        })}><ReactGridLayout {...props} >{
+        })} {...props} {...{width,cols:width}} onResize={()=>{
+            console.log('')
+        }}>{
             layoutList.map((item) => {
                 return LJGridLayoutRender(item)
                 // <LJGridLayout key={item.i} {...item} id={item.i}></LJGridLayout>
             })
         }</ReactGridLayout>
-        </div>
     )
 }
 
