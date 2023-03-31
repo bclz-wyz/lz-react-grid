@@ -31,18 +31,24 @@ export function styleDToS(value: LjMoveableChildStyle) {
 const App: React.FC<Props> = (props) => {
     const { isKeydown: isCommand } = useKeycon({ keys: "meta" });
     const { isKeydown: isShift } = useKeycon({ keys: "shift" });
+    
+    const upDate = AHooks.useUpdate()
 
-    const { value: childList = [], setValue: setChildList, go: childListGoBack } = AHooks.useHistoryTravel<LjMoveableChild[]>(props.data);
+    const { value: childList = [], setValue: setChildList, back: childListBack,reset:childListReset} = AHooks.useHistoryTravel<LjMoveableChild[]>([...props.data],10);
+
+    React.useEffect(()=>{
+        setChildList(_.cloneDeep(props.data))
+    },[])
 
     const groupManagerRef = React.useRef<GroupManager>();
 
-    const { value: targets = [], setValue: setTargets, go: goBack } = AHooks.useHistoryTravel<MoveableTargetGroupsType>([]);
+    const { value: targets = [],backLength,forwardLength, setValue: setTargets, go: goBack } = AHooks.useHistoryTravel<MoveableTargetGroupsType>([],10);
     const moveableRef = React.useRef<Moveable>(null);
     const selectoRef = React.useRef<Selecto>(null);
 
-    const setSelectedTargets = React.useCallback((nextTargetes: MoveableTargetGroupsType) => {
-        selectoRef.current!.setSelectedTargets(deepFlat(nextTargetes));
-        setTargets(nextTargetes);
+    const setSelectedTargets = React.useCallback((nextTargets: MoveableTargetGroupsType) => {
+        selectoRef.current!.setSelectedTargets(deepFlat(nextTargets));
+        setTargets(nextTargets);
     }, []);
     React.useEffect(() => {
         // [[0, 1], 2], 3, 4, [5, 6], 7, 8, 9
@@ -57,7 +63,8 @@ const App: React.FC<Props> = (props) => {
 
     return <div className="root LJMoveableSelectoTest">
         <div className="toolBar">
-            <Button onClick={() => { childListGoBack(-1) }}>撤销</Button>
+            <Button onClick={() => { childListBack();console.log(backLength,forwardLength) }}>撤销</Button>
+            <Button onClick={() => { childListReset();console.log(backLength,forwardLength) }}>还原</Button>
         </div>
         <div className="container">
             <Moveable
@@ -114,8 +121,8 @@ const App: React.FC<Props> = (props) => {
                  * 在drag结束后更新 childList
                  */
                 onDragEnd={e => {
-                    const { transform } = e.lastEvent;
-                    const [x, y] = transform
+                    const { translate } = e.lastEvent;
+                    const [x, y] = translate
                     console.group('onDragEnd')
                     console.log(e)
                     console.groupEnd()
@@ -125,6 +132,10 @@ const App: React.FC<Props> = (props) => {
                         ...(targetChild?.style||{}),
                         x,y
                     }
+                    console.log({
+                        ...(targetChild?.style||{}),
+                        x,y
+                    })
                     setChildList(_.cloneDeep(childList))
                     
                 }}
@@ -245,7 +256,7 @@ const App: React.FC<Props> = (props) => {
                     const itemStyle = styleDToS(item.style || {})
                     return <div data-id={item.id} className="cube" style={{
                         ...itemStyle
-                    }} key={item.id}>{item.name}</div>
+                    }} key={`${item.id}`}>{item.name}</div>
                 })}
             </div>
         </div>
