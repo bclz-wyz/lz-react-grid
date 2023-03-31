@@ -2,8 +2,10 @@
 
 This is an example component.
 
-```jsx
-import { LJMoveableSelectoTest } from 'lj-react-grid';
 
-export default () => <LJMoveableSelectoTest />
+``` jsx
+import {DemoLJMoveableSelectoTest} from 'lj-react-grid';
+
+export default ()=><DemoLJMoveableSelectoTest />
 ```
+

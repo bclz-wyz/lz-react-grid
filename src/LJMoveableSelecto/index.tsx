@@ -1,4 +1,5 @@
 import React from 'react'
+import * as ahooks from 'ahooks'
 import Moveable, { OnDrag, OnResize, OnScale, OnRotate, MoveableTargetGroupsType } from 'react-moveable';
 import './style.less'
 import Selecto from 'react-selecto';
@@ -29,8 +30,8 @@ const LJMoveableSelecto: React.FC = () => {
                 height: '100px',
                 transform: 'translate(100px,100px)',
                 backgroundColor: 'red',
-                left: '10px',
-                top: '10px'
+                // left: '10px',
+                // top: '10px'
             }
         },
         {
@@ -40,7 +41,7 @@ const LJMoveableSelecto: React.FC = () => {
             style: {
                 width: '100px',
                 height: '100px',
-                transform: 'translate(100px,100px)',
+                transform: 'translate(20px,20px)',
                 backgroundColor: 'yellow'
             }
         }
@@ -53,38 +54,16 @@ const LJMoveableSelecto: React.FC = () => {
         ]);
     }, []);
 
+    // 监听resize
+    const resizeRef = React.useRef<HTMLDivElement>(null);
+    const size = ahooks.useSize(resizeRef)
+
+    React.useEffect(()=>{
+        console.log('size',size)
+    },[size])
+
     return (
-        <div className='lj-moveable'>
-            <div className="container">
-                {/* <div className='target target2' style={{
-                    transform: 'translate(100px,100px)',
-                    zIndex: 2,
-                }}>
-                    1
-                </div>
-                <div className='target target1' style={{
-                    zIndex: 1
-                }}>2</div>
-                <div className='target-2 target2' style={{
-                    transform: 'translate(100px,100px)',
-                    zIndex: 2,
-                }}>
-                    1
-                </div>
-                <div className='target-2 target1' style={{
-                    zIndex: 1
-                }}>2</div>
-                <div className='target target3' style={{
-                    zIndex: 1
-                }}>333</div> */}
-                {/* {
-                    childrenList.map(item => {
-                        return <div className={`target ${item.group}`} style={item.style} key={item.name} />
-                    })
-                } */}
-
-
-            </div>
+        <div className='lj-moveable' ref={resizeRef} >
             <Moveable
                 ref={moveableRef}
                 target={targets}
@@ -114,46 +93,28 @@ const LJMoveableSelecto: React.FC = () => {
                 }}
                 onDrag={e => {
                     e.target.style.transform = e.transform;
+                    console.log('onDrag')
                 }}
                 // onScale={e => {
                 //     e.target.style.transform = e.drag.transform;
 
                 // }}
+                onDragGroup={e=>{
+                    console.log('onDragGroup')
+                }}
                 onRotate={e => {
                     e.target.style.transform = e.drag.transform;
-
+                    console.log('onRotate')
                 }}
                 onResize={e => {
                     e.target.style.width = `${e.width}px`;
                     e.target.style.height = `${e.height}px`;
                     e.target.style.transform = e.drag.transform;
+                    console.log('onResize')
                 }}
                 onResizeEnd={(e) => {
                     console.log("onResizeEnd", e.target, e.isDrag, e.datas);
                 }}
-                // onDragGroup={({ events }) => {
-                //     console.log('onDragGroup', events)
-                //     events.forEach(ev => {
-                //         ev.target.style.transform = Number(ev.transform).toFixed(0);
-                //     });
-                // }}
-                // onResizeGroupStart={({ setMin, setMax }) => {
-                //     setMin([0, 0]);
-                //     setMax([0, 0]);
-                // }}
-                // onResizeGroup={({ events }) => {
-                //     events.forEach(ev => {
-                //         ev.target.style.width = `${ev.width.toFixed(0)}px`;
-                //         ev.target.style.height = `${ev.height.toFixed(0)}px`;
-                //         ev.target.style.transform = ev.drag.transform;
-                //     });
-                // }}
-                // onRotateGroup={({ events }) => {
-                //     events.forEach(ev => {
-                //         ev.target.style.transform = ev.drag.transform;
-                //     });
-                // }}
-
             />
             <Selecto
                 ref={selectoRef}
@@ -212,7 +173,7 @@ const LJMoveableSelecto: React.FC = () => {
             <div className="elements selecto-area">
             {
                     childrenList.map(item => {
-                        return <div className={`target cube ${item.group}`} style={item.style} key={item.name} />
+                        return <div className={`target cube ${item.group}`} style={item.style} key={item.name} >{item.content}</div>
                     })
                 }
             </div>

@@ -77,6 +77,7 @@
   "dependencies": {
     "@daybrush/utils": "^1.10.3",
     "@moveable/helper": "^0.1.2",
+    "ahooks": "^3.7.6",
     "antd": "^5.3.2",
     "clsx": "^1.2.1",
     "moveable": "^0.45.0",

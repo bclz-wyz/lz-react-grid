@@ -1,8 +1,7 @@
-export { default as Foo } from './Foo';
 export { default as LJGridContainer,layoutsMock } from './LJGridContainer';
-export { default as MsgDev } from './MsgDev';
+export { MsgDev } from './LJUtils';
 export { default as LJMoveable} from './LJMoveable'
 export { default as LJMoveableSelecto} from './LJMoveableSelecto'
-export { default as LJMoveableSelectoTest} from './LJMoveableSelectoTest'
+export { default as LJMoveableSelectoTest,LjMoveableChild,DemoLJMoveableSelectoTest} from './LJMoveableSelectoTest'
 
 
