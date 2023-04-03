@@ -18,6 +18,9 @@ type Props = {
     }
 }
 
+// 使用match方法提取字符串所有正整数、负整数、正小数、负小数
+const reg = /translate\(([\d.-]+)px, ([\d.-]+)px\) rotate\(([\d.-]+)deg\) scale\(([\d.-]+)\)/
+
 export function styleDToS(value: LjMoveableChildStyle) {
     const result = {
         width: String(value.width).endsWith('px') ? value.width : `${value.width}px`,
@@ -34,15 +37,23 @@ const App: React.FC<Props> = (props) => {
     
     const upDate = AHooks.useUpdate()
 
-    const { value: childList = [], setValue: setChildList, back: childListBack,reset:childListReset} = AHooks.useHistoryTravel<LjMoveableChild[]>([...props.data],10);
+    const { value: childList = [],backLength,forwardLength, setValue: setChildList, back: childListBack,reset:childListReset} = AHooks.useHistoryTravel<LjMoveableChild[]>(props.data);
 
-    React.useEffect(()=>{
-        setChildList(_.cloneDeep(props.data))
+    React.useLayoutEffect(() => {
+        // debugger
+        setChildList([...props.data])
     },[])
+    
+    // 解决最后一步无法撤回的问题
+    React.useLayoutEffect(()=>{
+        if(backLength===0){
+            setChildList(_.cloneDeep(childList))
+        }
+    },[backLength])
 
-    const groupManagerRef = React.useRef<GroupManager>();
+    
 
-    const { value: targets = [],backLength,forwardLength, setValue: setTargets, go: goBack } = AHooks.useHistoryTravel<MoveableTargetGroupsType>([],10);
+    const [ targets = [], setTargets] = React.useState<MoveableTargetGroupsType>([]);
     const moveableRef = React.useRef<Moveable>(null);
     const selectoRef = React.useRef<Selecto>(null);
 
@@ -50,21 +61,32 @@ const App: React.FC<Props> = (props) => {
         selectoRef.current!.setSelectedTargets(deepFlat(nextTargets));
         setTargets(nextTargets);
     }, []);
+
+
+    const groupManagerRef = React.useRef<GroupManager>();
     React.useEffect(() => {
         // [[0, 1], 2], 3, 4, [5, 6], 7, 8, 9
         const elements = selectoRef.current!.getSelectableElements();
-
-        // groupManagerRef.current = new GroupManager([
-        //     [[elements[0], elements[1]], elements[2]],
-        //     [elements[5], elements[6], elements[7]],
-        // ], elements);
         groupManagerRef.current = new GroupManager(elements);
     }, []);
 
+    const newChildStyle = AHooks.useMemoizedFn((style:CSSStyleDeclaration)=>{
+            const {transform,width,height} = style
+            const transformInfo = transform.match(reg)
+            console.log('newChildStyle',transform,transformInfo)
+            return {
+                width,height,
+                x:transformInfo[1],
+                y:transformInfo[2],
+                rotate:transformInfo[3],
+                scale:transformInfo[4],
+            }
+    })
+
     return <div className="root LJMoveableSelectoTest">
         <div className="toolBar">
-            <Button onClick={() => { childListBack();console.log(backLength,forwardLength) }}>撤销</Button>
-            <Button onClick={() => { childListReset();console.log(backLength,forwardLength) }}>还原</Button>
+            <Button disabled={backLength<=0} onClick={() => { childListBack();upDate();console.log(backLength,forwardLength) }}>撤销</Button>
+            <Button onClick={() => { childListReset();upDate();console.log(backLength,forwardLength) }}>还原</Button>
         </div>
         <div className="container">
             <Moveable
@@ -111,11 +133,10 @@ const App: React.FC<Props> = (props) => {
                     }
                 }}
                 onDrag={e => {
-                    console.log(e)
+                    // console.log(e)
                     const { transform } = e;
                     const [x, y] = transform
                     e.target.style.transform = e.transform;
-                    // childList()
                 }}
                 /**
                  * 在drag结束后更新 childList
@@ -127,18 +148,40 @@ const App: React.FC<Props> = (props) => {
                     console.log(e)
                     console.groupEnd()
                     const targetId = e.target.dataset['id']
-                    const targetChild = childList.find(item => item.id === targetId)!
-                    targetChild.style = {
-                        ...(targetChild?.style||{}),
-                        x,y
-                    }
-                    console.log({
-                        ...(targetChild?.style||{}),
-                        x,y
-                    })
+                    const newStyle = newChildStyle(e.target.style)
+                    const targetIndex = childList.findIndex(item => item.id === targetId)!
+                        childList.splice(targetIndex,1,{
+                            ...childList[targetIndex],
+                            style:{
+                                ...(childList[targetIndex]?.style||{}),
+                                ...newStyle
+                            }
+                        });
                     setChildList(_.cloneDeep(childList))
-                    
                 }}
+                onDragGroupEnd={(e)=>{
+                    console.group('onDragGroupEnd')
+                    console.log(e)
+                    console.groupEnd()
+                    e.events.forEach(({target})=>{
+                        const {style} = target
+                        const newStyle = newChildStyle(style)
+                        const targetId = target.dataset['id']
+                        const targetIndex = childList.findIndex(item => item.id === targetId)!
+                        childList.splice(targetIndex,1,{
+                            ...childList[targetIndex],
+                            style:{
+                                ...(childList[targetIndex]?.style||{}),
+                                ...newStyle
+                            }
+                        });
+                    })
+                    console.log('beforeSet',backLength,forwardLength)
+                    setChildList(_.cloneDeep(childList))
+                    console.log('afterSet',backLength,forwardLength)
+                }}
+
+
                 onRenderGroup={e => {
                     e.events.forEach(ev => {
                         ev.target.style.transform = ev.transform;
@@ -147,10 +190,7 @@ const App: React.FC<Props> = (props) => {
                     });
                 }}
                 
-                // onDragGroupEnd={()=>{
-                //     console.group('onDragEnd')
-                //     console.groupEnd()
-                // }}
+                
                 onRenderGroupEnd={(e) => {
                     console.group('onRenderGroupEnd')
                     e.targets.forEach((target, index) => {
@@ -163,19 +203,35 @@ const App: React.FC<Props> = (props) => {
                 }}
                 onRenderEnd={(e) => {
                     // 以group方式打印当前的target信息
-                    console.group('onRenderEnd')
-                    console.log(e)
-                    console.log('width', e.target.style.width);
-                    console.log('height', e.target.style.height);
-                    console.log('transform', e.target.style.transform);
-                    console.groupEnd()
+                    /**
+                     *  更新childList
+                     */
+                    // const {style} = e.target
+                    // const {transform,width,height} = style
+                    // const transformInfo = transform.match(reg)!
+                    // console.group('onRenderEnd')
+                    // console.log(e)
+                    // console.log('transformInfo',transformInfo)
+                    // console.log('width', width,height);
+                    // console.log('height', height);
+                    // console.log('transform', e.target.style.transform,[transformInfo[1],transformInfo[2]]);
+                    // console.log('rotate',transformInfo[3]);
+                    // console.log('scale',transformInfo[4]);
+                    // console.groupEnd()
 
+                    // const targetId = e.target.dataset['id']
+                    // const targetChild = childList.find(item => item.id === targetId)!
+                    // targetChild.style = {
+                    //     ...(targetChild?.style||{}),
+                    //     width,height,
+                    //     x:transformInfo[1],y:transformInfo[2],
+                    //     rotate:transformInfo[3],
+                    //     scale:transformInfo[4],
+                    // }
+                    // console.log(targetChild?.style)
+                    // setChildList(_.cloneDeep(childList))
+                    // console.log(backLength,forwardLength)
                 }}
-                // onRenderGroup={e => {
-                //     e.events.forEach(ev => {
-                //         ev.target.style.cssText += ev.cssText;
-                //     });
-                // }}
                 onResize={e => {
                     e.target.style.width = `${e.width}px`;
                     e.target.style.height = `${e.height}px`;
@@ -256,7 +312,7 @@ const App: React.FC<Props> = (props) => {
                     const itemStyle = styleDToS(item.style || {})
                     return <div data-id={item.id} className="cube" style={{
                         ...itemStyle
-                    }} key={`${item.id}`}>{item.name}</div>
+                    }} onClick={()=>{console.log(JSON.stringify(item))}} key={undefined}>{item.name}</div>
                 })}
             </div>
         </div>
