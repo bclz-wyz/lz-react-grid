@@ -62,6 +62,12 @@ const App: React.FC<Props> = (props) => {
         setTargets(nextTargets);
     }, []);
 
+    const [isSelectGroup,setIsSelectGroup] = React.useState(false)
+    React.useLayoutEffect(()=>{
+        setIsSelectGroup(targets.length>1)
+        console.log(targets.length)
+    },[targets])
+
 
     const groupManagerRef = React.useRef<GroupManager>();
     React.useEffect(() => {
@@ -72,7 +78,7 @@ const App: React.FC<Props> = (props) => {
 
     const newChildStyle = AHooks.useMemoizedFn((style:CSSStyleDeclaration)=>{
             const {transform,width,height} = style
-            const transformInfo = transform.match(reg)
+            const transformInfo = transform.match(reg)!
             console.log('newChildStyle',transform,transformInfo)
             return {
                 width,height,
@@ -97,14 +103,14 @@ const App: React.FC<Props> = (props) => {
                 // individualGroupable={true}
                 draggable={true}
                 throttleDrag={1}
-                resizable={true}
+                resizable={!isSelectGroup}
                 resizeFormat={(size) => {
                     return size.map(item => Number(item.toFixed(0)))
                 }}
                 edgeDraggable={false}
                 startDragRotate={0}
                 throttleDragRotate={0}
-                scalable={true}
+                scalable={false}
                 keepRatio={true}
                 throttleScale={0}
                 renderDirections={["nw", "n", "ne", "w", "e", "sw", "s", "se"]}
@@ -142,11 +148,15 @@ const App: React.FC<Props> = (props) => {
                  * 在drag结束后更新 childList
                  */
                 onDragEnd={e => {
-                    const { translate } = e.lastEvent;
-                    const [x, y] = translate
+                   
                     console.group('onDragEnd')
                     console.log(e)
                     console.groupEnd()
+
+                    // 单击选中时也会触发onDragEnd事件，通过lastEvent来判断是点击还是拖动
+                    if(!e.lastEvent){
+                        return
+                    }
                     const targetId = e.target.dataset['id']
                     const newStyle = newChildStyle(e.target.style)
                     const targetIndex = childList.findIndex(item => item.id === targetId)!
