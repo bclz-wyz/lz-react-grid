@@ -111,7 +111,7 @@ const App: React.FC<Props> = (props) => {
                 startDragRotate={0}
                 throttleDragRotate={0}
                 scalable={false}
-                keepRatio={true}
+                keepRatio={false}   // 缩放或resize时是否保持比例
                 throttleScale={0}
                 renderDirections={["nw", "n", "ne", "w", "e", "sw", "s", "se"]}
                 rotatable={true}
@@ -172,7 +172,7 @@ const App: React.FC<Props> = (props) => {
                 onDragGroupEnd={(e)=>{
                     console.group('onDragGroupEnd')
                     console.log(e)
-                    console.groupEnd()
+                    
                     e.events.forEach(({target})=>{
                         const {style} = target
                         const newStyle = newChildStyle(style)
@@ -189,8 +189,65 @@ const App: React.FC<Props> = (props) => {
                     console.log('beforeSet',backLength,forwardLength)
                     setChildList(_.cloneDeep(childList))
                     console.log('afterSet',backLength,forwardLength)
+                    console.groupEnd()
                 }}
 
+                onResize={e => {
+                    e.target.style.width = `${e.width}px`;
+                    e.target.style.height = `${e.height}px`;
+                    e.target.style.transform = e.drag.transform;
+                }}
+                onResizeEnd={e => {
+                    console.group('onResizeEnd')
+                    console.log(e)
+                    console.groupEnd()
+                    // 单击选中时也会触发onResizeEnd事件，通过lastEvent来判断是点击还是拖动
+                    if(!e.lastEvent){
+                        return
+                    }
+                    const targetId = e.target.dataset['id']
+                    const newStyle = newChildStyle(e.target.style)
+                    const targetIndex = childList.findIndex(item => item.id === targetId)!
+                    childList.splice(targetIndex,1,{
+                        ...childList[targetIndex],
+                        style:{
+                            ...(childList[targetIndex]?.style||{}),
+                            ...newStyle
+                        }
+                    });
+                    setChildList(_.cloneDeep(childList))
+                }}
+                onResizeGroupEnd={(e)=>{
+                    console.group('onResizeGroupEnd')
+                    console.log(e)
+                    
+                    e.events.forEach(({target})=>{
+                        const {style} = target
+                        const newStyle = newChildStyle(style)
+                        const targetId = target.dataset['id']
+                        const targetIndex = childList.findIndex(item => item.id === targetId)!
+                        childList.splice(targetIndex,1,{
+                            ...childList[targetIndex],
+                            style:{
+                                ...(childList[targetIndex]?.style||{}),
+                                ...newStyle
+                            }
+                        });
+                    })
+                    console.log('beforeSet',backLength,forwardLength)
+                    setChildList(_.cloneDeep(childList))
+                    console.log('afterSet',backLength,forwardLength)
+                    console.groupEnd()
+                }}
+                onResizeGroup={({ events }) => {
+                    console.log('onResizeGroupEvents', events);
+                    return
+                    events.forEach(ev => {
+                        // ev.target.style.width = `${ev.width.toFixed(0)}px`;
+                        // ev.target.style.height = `${ev.height.toFixed(0)}px`;
+                        ev.target.style.transform = ev.drag.transform;
+                    });
+                }}
 
                 onRenderGroup={e => {
                     e.events.forEach(ev => {
@@ -199,8 +256,6 @@ const App: React.FC<Props> = (props) => {
                         ev.target.style.height = `${ev.style.height}px`;
                     });
                 }}
-                
-                
                 onRenderGroupEnd={(e) => {
                     console.group('onRenderGroupEnd')
                     e.targets.forEach((target, index) => {
@@ -242,20 +297,7 @@ const App: React.FC<Props> = (props) => {
                     // setChildList(_.cloneDeep(childList))
                     // console.log(backLength,forwardLength)
                 }}
-                onResize={e => {
-                    e.target.style.width = `${e.width}px`;
-                    e.target.style.height = `${e.height}px`;
-                    e.target.style.transform = e.drag.transform;
-                }}
-                onResizeGroup={({ events }) => {
-                    console.log('onResizeGroupEvents', events);
-                    return
-                    events.forEach(ev => {
-                        // ev.target.style.width = `${ev.width.toFixed(0)}px`;
-                        // ev.target.style.height = `${ev.height.toFixed(0)}px`;
-                        ev.target.style.transform = ev.drag.transform;
-                    });
-                }}
+                
             ></Moveable>
             <Selecto
                 ref={selectoRef}

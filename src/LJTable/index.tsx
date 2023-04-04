@@ -1,6 +1,7 @@
-import React, { memo, useMemo } from 'react'
+import React, { useEffect, memo, useMemo } from 'react'
 import clsx from 'clsx';
 import './style.less'
+import * as _ from 'lodash'
 
 interface data {
     id: string;
@@ -11,26 +12,28 @@ interface TableProps {
     row: Number;
     column: Number;
     data?: data[];
+    setOneRow: any;
     development?: boolean
 
 }
 const LJTableSelect: React.FC<TableProps> = memo((props) => {
+    let oneRow: any = []
 
-    const onChangeRow = (key: any, event: any) => {
-        console.log(key, event.target.value, 1234)
-
+    const onChangeRow = (key: any, event: any, id: string) => {
+        oneRow[key] = event.target.value
+        props.setOneRow(id, oneRow)
     }
     const gridState = useMemo(() => {
         const { data, row, column } = props;
-        console.log(props, 123)
         if (data) {
+            oneRow = _.cloneDeep(data[0].value.split(","))
             let rows: JSX.Element[] = [];
             let columns: JSX.Element[] = [];
             let nullElm: JSX.Element[] = [];
             let arrs: any = [];
             let firstRows: JSX.Element[] = [];
             for (let index = 0; index < column; index++) {
-                firstRows.push(<input type="text" key={index} defaultValue={data[0].value.split(",")[index]} onChange={() => { onChangeRow(index, event) }} />);
+                firstRows.push(<input type="text" key={index} defaultValue={data[0].value.split(",")[index]} onChange={(e) => { onChangeRow(index, e, data[0].id) }} />);
             }
             for (let i = 1; i < data.length; i++) {
                 columns = []
@@ -63,11 +66,11 @@ const LJTableSelect: React.FC<TableProps> = memo((props) => {
                 </div>
             )
         }
-    }, [props])
+    }, [])
 
     return (
         <div>
-            <div>{gridState}</div>
+            {gridState}
         </div>)
 
 

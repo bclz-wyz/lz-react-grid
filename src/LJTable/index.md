@@ -10,6 +10,10 @@ export default () => {
     { id: '2', value: '2,1,~,1,v' },
     { id: '3', value: '3,1,~,1,v' },
   ];
-  return <LJTable row={6} column={6} data={data} />;
+  // 修改第一行
+  const setOneRow = (id, oneRow) => {
+    console.log(id, oneRow, 11);
+  };
+  return <LJTable row={6} column={6} data={data} setOneRow={setOneRow} />;
 };
 ```
